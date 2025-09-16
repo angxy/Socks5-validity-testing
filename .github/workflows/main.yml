@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag (e.g., v1.0.0)'
+        required: true
+        default: 'v1.0.0'
 
 jobs:
   build-and-release:
@@ -39,7 +45,15 @@ jobs:
       - name: Run builds-linux.sh
         run: |
           chmod +x ./builds-linux.sh
-          ./builds-linux.sh aigo.go
+          ./builds-linux.sh aigo.go "${{ github.event.inputs.version || github.ref_name }}"
+
+      # 检查 builds 目录是否存在
+      - name: Verify build output
+        run: |
+          if [ ! -d "builds" ] || [ -z "$(ls -A builds)" ]; then
+            echo "Error: No build artifacts found in builds/ directory"
+            exit 1
+          fi
 
       # 创建 GitHub Release
       - name: Create Release
@@ -48,8 +62,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.ref_name }}
-          release_name: Proxy Checker ${{ github.ref_name }}
+          tag_name: ${{ github.event.inputs.version || github.ref_name }}
+          release_name: Proxy Checker ${{ github.event.inputs.version || github.ref_name }}
           draft: false
           prerelease: false
 
@@ -59,10 +73,15 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           for asset in builds/*; do
-            asset_name=$(basename "$asset")
-            curl -X POST \
-              -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-              -H "Content-Type: application/octet-stream" \
-              --data-binary "@$asset" \
-              "${{ steps.create_release.outputs.upload_url }}?name=$asset_name"
+            if [ -f "$asset" ]; then
+              asset_name=$(basename "$asset")
+              echo "Uploading $asset_name..."
+              curl -X POST \
+                -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                -H "Content-Type: application/octet-stream" \
+                --data-binary "@$asset" \
+                "${{ steps.create_release.outputs.upload_url }}?name=$asset_name"
+            else
+              echo "Skipping $asset (not a file)"
+            fi
           done
