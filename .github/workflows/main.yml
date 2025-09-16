@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag (e.g., v1.0.0)'
+        required: true
+        default: 'v1.0.0'
 
 jobs:
   build-and-release:
@@ -39,30 +45,25 @@ jobs:
       - name: Run builds-linux.sh
         run: |
           chmod +x ./builds-linux.sh
-          ./builds-linux.sh aigo.go
+          ./builds-linux.sh aigo.go "${{ github.event.inputs.version || github.ref_name }}"
 
-      # 创建 GitHub Release
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # 检查 builds 目录是否存在
+      - name: Verify build output
+        run: |
+          if [ ! -d "builds" ] || [ -z "$(ls -A builds)" ]; then
+            echo "Error: No build artifacts found in builds/ directory"
+            exit 1
+          fi
+
+      # 创建 GitHub Release 并上传资产
+      - name: Create Release and Upload Assets
+        uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_name }}
-          release_name: Proxy Checker ${{ github.ref_name }}
+          tag_name: ${{ github.event.inputs.version || github.ref_name }}
+          name: Proxy Checker ${{ github.event.inputs.version || github.ref_name }}
           draft: false
           prerelease: false
-
-      # 上传所有二进制文件作为 Release 资产
-      - name: Upload Release Assets
+          files: |
+            builds/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          for asset in builds/*; do
-            asset_name=$(basename "$asset")
-            curl -X POST \
-              -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-              -H "Content-Type: application/octet-stream" \
-              --data-binary "@$asset" \
-              "${{ steps.create_release.outputs.upload_url }}?name=$asset_name"
-          done
