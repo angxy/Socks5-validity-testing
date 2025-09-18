@@ -172,7 +172,7 @@ var (
 		"TC": "特克斯和凯科斯群岛", "TV": "图瓦卢", "UG": "乌干达", "UA": "乌克兰",
 		"AE": "阿拉伯联合酋长国", "GB": "英国", "US": "美国", "UY": "乌拉圭",
 		"UZ": "乌兹别克斯坦", "VU": "瓦努阿图", "VE": "委内瑞拉", "VN": "越南",
-		"WF": "瓦利斯和富图纳", "EH": "西撒哈拉", "YE": "也门", "ZM": "赞比亚", "ZW": "津巴布瓦",
+		"WF": "瓦利斯和富图纳", "EH": "西撒哈拉", "YE": "也门", "ZM": "赞比亚", "ZW": "津巴布韦",
 		"UNKNOWN": "未知",
 	}
 
@@ -223,7 +223,7 @@ var (
 		"connection was reset":           "连接重置",
 		"i/o timeout":                   "I/O超时",
 		"tls: handshake failure":         "TLS握手失败",
-		"tls: internal error":           "TLS内部错误",
+		"tls: internal error":            "TLS内部错误",
 		"connection abort":              "连接异常中断",
 		"proxy connect tcp":             "代理连接失败",
 		"Bad Request":                   "请求错误 (Bad Request)",
@@ -284,7 +284,7 @@ func getStringDisplayWidth(s string) int {
 	return width
 }
 
-// DrawCenteredTitleBox 绘制居中标题框（🚫固化）
+// DrawCenteredTitleBox 绘制居中标题框
 func DrawCenteredTitleBox(title string, width int) {
 	// 1. 移除 ANSI 颜色代码，以获取纯文本
 	cleanTitle := removeColorCodes([]byte(title))
@@ -1373,11 +1373,11 @@ func runCheck() {
 
 	// 修复后的方案：参考启动消息，直接发送粗体字符串，不经过 escapeMarkdownV2
 	if config.Telegram.BotToken != "" && config.Telegram.ChatID != "" {
-		sendTelegramMessage("*🎉 脚本运行结束*")
+		sendTelegramMessage("*🎉 程序运行结束*")
 	}
 
 	// 修改：将终端打印的结束消息也显示为粗体
-	log.Println(ColorGreen + "\033[1m🎉 脚本运行结束！\033[0m" + ColorReset)
+	log.Println(ColorGreen + "\033[1m🎉 程序运行结束！\033[0m" + ColorReset)
 }
 
 // showMenu 显示主菜单并处理用户输入
@@ -1442,6 +1442,5 @@ func main() {
 		log.Printf("⚠️ 未设置输出目录，使用默认值: %s\n", config.Settings.OutputDir)
 	}
 
-	// 显示主菜单
 	showMenu()
 }
